@@ -1,0 +1,43 @@
+'use strict';
+
+import { updateWeather, error404} from "./app.js";
+const defaultLocation = "#/weather?lat=-1.2920659&lon=36.8219462" //Nairobi
+
+const currentLocation = function () {
+    window.navigator.geolocation.getCurrentPosition(res => {
+        const { latitude, longitude } = res.coords;
+
+        updateWeather(`lat=${latitude}`, `lon=${longitude}`);
+    }, err => {
+        window.location.hash = defaultLocation;
+    });
+}
+
+/**
+ * @param {string} query Searched query
+ */
+const searchedLocation = query => updateWeather(...query.split("&"));
+// updateweather("lat=-1.2920659", "lon=36.8219462")
+
+const routes = new Map ([
+    ["/current-location", currentLocation],
+    ["/weather", searchedLocation]
+]);
+
+const checkHash = function () {
+    const requestURL = window.location.hash.slice(1);
+
+    const [route, query] = requestURL.includes ? requestURL.split("?") : [requestURL];
+
+    routes.get(route) ? routes.get(route)(query) : error404()
+}
+
+window.addEventListener("hashChange", checkHash);
+
+window.addEventListener("load", function () {
+    if (!this.window.location.hash) {
+        this.window.location.hash = "#/current-location";
+    } else {
+        checkHash();
+    }
+})
